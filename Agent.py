@@ -174,8 +174,8 @@ def main():
         removed_only.append(NUM_R)
 
 
-    np.save(get_filename(start_time, "INFECTED_")  + ".npy", infected)
-    np.save(get_filename(start_time, "INFCONLY_")  + ".npy", infected_only)
+    np.save(get_filename(start_time, "data/INFECTED_")  + ".npy", infected)
+    np.save(get_filename(start_time, "data/INFCONLY_")  + ".npy", infected_only)
     plt.plot(range(MAX_TIME), infected,color='b', label='Infected + Removed')
     plt.plot(range(MAX_TIME), infected_only, color='r', label='Infected')
     plt.title("CONSTRAIN_MOVEMENT = " + str(CONSTRAIN_MOVEMENT))
@@ -192,7 +192,7 @@ def main():
     plt.xlabel('Week #')
     plt.legend(loc="upper left")
     plt.savefig(get_filename(start_time, "NEWCASE_") + ".svg")
-    np.save(get_filename(start_time, "NEWCASE_")  + ".npy", new_cases)
+    np.save(get_filename(start_time, "data/NEWCASE_")  + ".npy", new_cases)
     # plt.show()
 
 def get_filename(timestr, prefix=""):
