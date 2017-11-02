@@ -194,7 +194,15 @@ def get_filename(timestr, prefix=""):
         The filename summarizes the parameters of the model. """
     global GRAPH_SIZE
     global OUT_DIR
-    return OUT_DIR + "/" + prefix + "size{0:03d}_agents{1}_cm{2}_cn{3}_t{4}".format(GRAPH_SIZE, NUM_AGENTS, CONSTRAIN_MOVEMENT, CONSTRAIN_NETWORK,timestr)
+    if CONSTRAIN_MOVEMENT:
+        const_mov = "True_"
+    else:
+        const_mov = "False"
+    if CONSTRAIN_NETWORK:
+        const_net = "True_"
+    else:
+        const_net = "False"
+    return OUT_DIR + "/" + prefix + "size{0:03d}_agents{1}_cm{2}_cn{3}_t{4}".format(GRAPH_SIZE, NUM_AGENTS, const_mov, const_net,timestr)
 
 
 if __name__ == '__main__':
