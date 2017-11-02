@@ -1,15 +1,20 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import sys
+import time
 
-program, MAX_TIME = sys.argv[0], int(sys.argv[1])
+program, MAX_TIME, REDUCTION_FACTOR = sys.argv[0], int(sys.argv[1]), int(sys.argv[2])
 
+# Data Lookup Structures
+NEIGHBOR_LIST = {}                                  # Dictionary mapping (x,y) -> neighbors of (x,y)
+NODE_STATS = {}                                     # Dictionary mapping (x,y) -> {"numI": # infected, "nonR": # non_removed}
 
-NODE_STATS = {}  # (0,0) : {"numI": # infected, "nonR": # non_removed}
-GRAPH_SIZE = 3
+# Global Model Params
+OUT_DIR = "results/"
+GRAPH_SIZE = int(np.sqrt(174 - 1)/np.sqrt(REDUCTION_FACTOR))  # population / scaling factor
+NUM_AGENTS = int((1.6 * 10**6)/(REDUCTION_FACTOR))            # sqrt(square area of city) / sqrt(scaling_factor)
 NUM_NODES = (GRAPH_SIZE + 1)**2
 CUR_TIME = 0
-NUM_AGENTS = 5000
 NUM_INF = 1
 NUM_R = 0
 NEW_CASES = 1
@@ -20,9 +25,9 @@ CONSTRAIN_NETWORK = False
 # EXCLUDE_EDGES = {()}
 PROB_STAY = 0.9
 PROB_LEAVE = 1 - PROB_STAY
-INF_TIME = 8.0 # From CDC avg time til death
-R_VALUE = 2.0
-R0 = R_VALUE / INF_TIME 
+INF_TIME = 8.0                                      # From CDC avg time til death
+R_VALUE = 2.0                                       # From CDC
+R0 = R_VALUE / INF_TIME                             # Probability of infecting someone per timestep
 
 
 class Agent(object):
@@ -93,17 +98,22 @@ class Agent(object):
                 NEW_CASES += 1
 
     def find_neighbors(self):
-        n = [self.pos]
-        for d in [-1, 1]:
-            x1 = self.pos[0] + d
-            y1 = self.pos[1]
-            if not (x1 < 0 or y1 < 0 or x1 > GRAPH_SIZE or y1 > GRAPH_SIZE):
-                n.append((x1, y1))
-            x1 = self.pos[0]
-            y1 = self.pos[1] + d
-            if not (x1 < 0 or y1 < 0 or x1 > GRAPH_SIZE or y1 > GRAPH_SIZE):
-                n.append((x1, y1))
-        return n
+        global NEIGHBOR_LIST
+        if self.pos in NEIGHBOR_LIST.keys():
+            return NEIGHBOR_LIST[self.pos]
+        else:
+            n = [self.pos]
+            for d in [-1, 1]:
+                x1 = self.pos[0] + d
+                y1 = self.pos[1]
+                if not (x1 < 0 or y1 < 0 or x1 > GRAPH_SIZE or y1 > GRAPH_SIZE):
+                    n.append((x1, y1))
+                x1 = self.pos[0]
+                y1 = self.pos[1] + d
+                if not (x1 < 0 or y1 < 0 or x1 > GRAPH_SIZE or y1 > GRAPH_SIZE):
+                    n.append((x1, y1))
+            NEIGHBOR_LIST[self.pos] = n
+            return n
 
     def __repr__(self):
         return str(self.pos) + str(self.state)
@@ -138,7 +148,12 @@ def init_agents():
 def main():
     global CUR_TIME
     global NEW_CASES
+
+    start_time = time.strftime("%Y%m%d_%H%M%S")
+    print "Graph size:", GRAPH_SIZE, " Nodes:", NUM_NODES
+    print "Num agents:", NUM_AGENTS
     agents = init_agents()
+    print "Agents initialized..."
 
     infected_only = []
     removed_only = []
@@ -153,19 +168,31 @@ def main():
         for a in agents:
             a.update_state()
             a.update_pos()
+        print "t =", t, "infected =", NUM_INF + NUM_R
         infected.append(NUM_INF + NUM_R)
         infected_only.append(NUM_INF)
         removed_only.append(NUM_R)
 
 
-    
-    plt.plot(range(len(new_cases)), new_cases)
-    plt.show()
+    np.save(get_filename(start_time, "INFECTED_")  + ".npy", infected)
+    np.save(get_filename(start_time, "INFCONLY_")  + ".npy", infected_only)
     plt.plot(range(MAX_TIME), infected,color='b')
     plt.plot(range(MAX_TIME), infected_only, color='r')
-    # plt.plot(range(MAX_TIME), removed_only, color='g')
-    plt.show()
+    plt.title("CONSTRAIN_MOVEMENT = " + str(CONSTRAIN_MOVEMENT))
+    plt.savefig(get_filename(start_time, "INFECTED_") + ".svg")
+    # plt.show()
+    plt.close()
 
+    plt.plot(range(len(new_cases)), new_cases)
+    plt.title("New cases, CONSTRAIN_MOVEMENT =" + str(CONSTRAIN_MOVEMENT))
+    plt.savefig(get_filename(start_time, "NEWCASE_") + ".svg")
+    np.save(get_filename(start_time, "NEWCASE_")  + ".npy", new_cases)
+    # plt.show()
+
+def get_filename(timestr, prefix=""):
+    global GRAPH_SIZE
+    global OUT_DIR
+    return OUT_DIR + "/" + prefix + "size{0:03d}_agents{1}_cm{2}_cn{3}_t{4}".format(GRAPH_SIZE, NUM_AGENTS, CONSTRAIN_MOVEMENT, CONSTRAIN_NETWORK,timestr)
 
 
 if __name__ == '__main__':
