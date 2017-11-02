@@ -6,13 +6,13 @@ import time
 program, MAX_TIME, REDUCTION_FACTOR = sys.argv[0], int(sys.argv[1]), int(sys.argv[2])
 
 # Data Lookup Structures
-NEIGHBOR_LIST = {}                                  # Dictionary mapping (x,y) -> neighbors of (x,y)
-NODE_STATS = {}                                     # Dictionary mapping (x,y) -> {"numI": # infected, "nonR": # non_removed}
+NEIGHBOR_LIST = {}         # (x,y) -> neighbors of (x,y)
+NODE_STATS = {}            # (x,y) -> {"numI": # infected, "nonR": # non_removed}
 
 # Global Model Params
 OUT_DIR = "results/"
-GRAPH_SIZE = int(np.sqrt(174 - 1)/np.sqrt(REDUCTION_FACTOR))  # population / scaling factor
-NUM_AGENTS = int((1.6 * 10**6)/(REDUCTION_FACTOR))            # sqrt(square area of city) / sqrt(scaling_factor)
+GRAPH_SIZE = int(np.sqrt(174 - 1)/np.sqrt(REDUCTION_FACTOR))  # sqrt(square area of city) / sqrt(scaling_factor)
+NUM_AGENTS = int((1.6 * 10**6)/(REDUCTION_FACTOR))            # population / scaling factor
 NUM_NODES = (GRAPH_SIZE + 1)**2
 CUR_TIME = 0
 NUM_INF = 1
@@ -25,9 +25,9 @@ CONSTRAIN_NETWORK = False
 # EXCLUDE_EDGES = {()}
 PROB_STAY = 0.9
 PROB_LEAVE = 1 - PROB_STAY
-INF_TIME = 8.0                                      # From CDC avg time til death
-R_VALUE = 2.0                                       # From CDC
-R0 = R_VALUE / INF_TIME                             # Probability of infecting someone per timestep
+INF_TIME = 8.0             # From CDC avg time til death
+R_VALUE = 2.0              # From CDC
+R0 = R_VALUE / INF_TIME    # Probability of infecting someone per timestep
 
 
 class Agent(object):
@@ -190,6 +190,8 @@ def main():
     # plt.show()
 
 def get_filename(timestr, prefix=""):
+    """ Returns a filename that incorporates a timestamp and a potential prefix.
+        The filename summarizes the parameters of the model. """
     global GRAPH_SIZE
     global OUT_DIR
     return OUT_DIR + "/" + prefix + "size{0:03d}_agents{1}_cm{2}_cn{3}_t{4}".format(GRAPH_SIZE, NUM_AGENTS, CONSTRAIN_MOVEMENT, CONSTRAIN_NETWORK,timestr)
