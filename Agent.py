@@ -116,11 +116,10 @@ class Agent(object):
                     else:
                         xy = (self.pos[0], self.pos[1] + d)
                     x1, y1 = xy
-                exclude_neighbor = (self.pos in EXCLUDE_EDGES.keys())   \
-                                    and (x1, y1) in EXCLUDE_EDGES[self.pos]
-                if not (exclude_neighbor or x1 < 0 or y1 < 0 or x1 > GRAPH_SIZE\
-                        or y1 > GRAPH_SIZE):
-                    n.append((x1, y1))
+                    # True if this neighbor should be excluded
+                    exclude_neighbor = (self.pos in EXCLUDE_EDGES.keys()) and ((x1, y1) in EXCLUDE_EDGES[self.pos])
+                    if not (exclude_neighbor or x1 < 0 or y1 < 0 or x1 > GRAPH_SIZE or y1 > GRAPH_SIZE):
+                        n.append((x1, y1))
             NEIGHBOR_LIST[self.pos] = n
             return n
 
@@ -157,11 +156,11 @@ def init_agents():
 def main():
     global CUR_TIME
     global NEW_CASES
-    start_time = time.strftime("%Y%m%d_%H%M%S")
 
     print "Graph size:", GRAPH_SIZE, " Nodes:", NUM_NODES
     print "Num agents:", NUM_AGENTS
 
+    start_time = time.strftime("%Y%m%d_%H%M%S")
     agents = init_agents()
 
     print "Agents initialized..."
