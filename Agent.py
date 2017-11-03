@@ -3,16 +3,22 @@ import matplotlib.pyplot as plt
 import sys
 import time
 
-program, MAX_TIME, REDUCTION_FACTOR = sys.argv[0], int(sys.argv[1]), int(sys.argv[2])
+if len(sys.argv) < 3:
+    print "Please provide a maximum time to run simulation and a size reduction factor."
+    exit(0)
+
+MAX_TIME, REDUCTION_FACTOR = int(sys.argv[1]), int(sys.argv[2])
 
 # Data Lookup Structures
-NEIGHBOR_LIST = {}         # (x,y) -> neighbors of (x,y)
-NODE_STATS = {}            # (x,y) -> {"numI": # infected, "nonR": # non_removed}
+NEIGHBOR_LIST = {}        # (x,y) -> neighbors of (x,y)
+NODE_STATS = {}           # (x,y) -> {"numI": # infected, "nonR": # non_removed}
 
 # Global Model Params
 OUT_DIR = "results/"
-GRAPH_SIZE = int(np.sqrt(174 - 1)/np.sqrt(REDUCTION_FACTOR))  # sqrt(square area of city) / sqrt(scaling_factor)
-NUM_AGENTS = int((1.6 * 10**6)/(REDUCTION_FACTOR))            # population / scaling factor
+# sqrt(square area of city) / sqrt(scaling_factor)
+GRAPH_SIZE = int(np.sqrt(174 - 1)/np.sqrt(REDUCTION_FACTOR)) * 2
+# population / scaling factor
+NUM_AGENTS = int((1.6 * 10**6)/(REDUCTION_FACTOR))
 NUM_NODES = (GRAPH_SIZE + 1)**2
 CUR_TIME = 0
 NUM_INF = 1
@@ -20,9 +26,9 @@ NUM_R = 0
 NEW_CASES = 1
 
 # Agent Params
-CONSTRAIN_MOVEMENT = False
+CONSTRAIN_MOVEMENT = True
 CONSTRAIN_NETWORK = False
-# EXCLUDE_EDGES = {()}
+EXCLUDE_EDGES = dict() # (x,y) -> [(x0,y0), (x1,y1)...]
 PROB_STAY = 0.9
 PROB_LEAVE = 1 - PROB_STAY
 INF_TIME = 8.0             # From CDC avg time til death
@@ -40,6 +46,7 @@ class Agent(object):
         self.infected_time = None
         self.INC_TIME = np.random.randint(2, 21 + 1) # From WHO incubation time
         self.neighbors = self.find_neighbors()
+
         # Update stats
         if state == "I":
             NODE_STATS[self.pos]["numI"] += 1
@@ -103,14 +110,18 @@ class Agent(object):
             return NEIGHBOR_LIST[self.pos]
         else:
             n = [self.pos]
+            # Add +1 and -1 to x and y separately
             for d in [-1, 1]:
-                x1 = self.pos[0] + d
-                y1 = self.pos[1]
-                if not (x1 < 0 or y1 < 0 or x1 > GRAPH_SIZE or y1 > GRAPH_SIZE):
-                    n.append((x1, y1))
-                x1 = self.pos[0]
-                y1 = self.pos[1] + d
-                if not (x1 < 0 or y1 < 0 or x1 > GRAPH_SIZE or y1 > GRAPH_SIZE):
+                for idx in [0, 1]:
+                    if idx == 0:
+                        xy = (self.pos[0] + d, self.pos[1])
+                    else:
+                        xy = (self.pos[0], self.pos[1] + d)
+                    x1, y1 = xy
+                exclude_neighbor = (self.pos in EXCLUDE_EDGES.keys())   \
+                                    and (x1, y1) in EXCLUDE_EDGES[self.pos]
+                if not (exclude_neighbor or x1 < 0 or y1 < 0 or x1 > GRAPH_SIZE\
+                        or y1 > GRAPH_SIZE):
                     n.append((x1, y1))
             NEIGHBOR_LIST[self.pos] = n
             return n
@@ -122,7 +133,7 @@ class Agent(object):
 def init_agents():
     agents = []
     agents_per_node = NUM_AGENTS / NUM_NODES
-    left_over_agents = NUM_AGENTS - (agents_per_node * NUM_NODES)
+    left_over_agents = NUM_AGENTS % NUM_NODES
 
     print "agents_per_node", agents_per_node
     print "left_over_agents", left_over_agents
@@ -173,10 +184,9 @@ def main():
         infected_only.append(NUM_INF)
         removed_only.append(NUM_R)
 
-
-    np.save(get_filename(start_time, "data/INFECTED_")  + ".npy", infected)
-    np.save(get_filename(start_time, "data/INFCONLY_")  + ".npy", infected_only)
-    plt.plot(range(MAX_TIME), infected,color='b', label='Infected + Removed')
+    np.save(get_filename(start_time, "data/INFECTED_") + ".npy", infected)
+    np.save(get_filename(start_time, "data/INFCONLY_") + ".npy", infected_only)
+    plt.plot(range(MAX_TIME), infected, color='b', label='Infected + Removed')
     plt.plot(range(MAX_TIME), infected_only, color='r', label='Infected')
     plt.title("CONSTRAIN_MOVEMENT = " + str(CONSTRAIN_MOVEMENT))
     plt.ylabel('Number of cases')
@@ -192,14 +202,16 @@ def main():
     plt.xlabel('Week #')
     plt.legend(loc="upper left")
     plt.savefig(get_filename(start_time, "NEWCASE_") + ".svg")
-    np.save(get_filename(start_time, "data/NEWCASE_")  + ".npy", new_cases)
+    np.save(get_filename(start_time, "data/NEWCASE_") + ".npy", new_cases)
     # plt.show()
+
 
 def get_filename(timestr, prefix=""):
     """ Returns a filename that incorporates a timestamp and a potential prefix.
         The filename summarizes the parameters of the model. """
     global GRAPH_SIZE
     global OUT_DIR
+    global MAX_TIME
     if CONSTRAIN_MOVEMENT:
         const_mov = "True_"
     else:
@@ -208,7 +220,10 @@ def get_filename(timestr, prefix=""):
         const_net = "True_"
     else:
         const_net = "False"
-    return OUT_DIR + "/" + prefix + "size{0:03d}_agents{1}_cm{2}_cn{3}_t{4}".format(GRAPH_SIZE, NUM_AGENTS, const_mov, const_net,timestr)
+    return OUT_DIR + "/" + prefix + "size{0:03d}_agents{1}_cm{2}_cn{3}_days{4}_t{5}".format(GRAPH_SIZE, NUM_AGENTS, const_mov, const_net, MAX_TIME, timestr)
+
+
+
 
 
 if __name__ == '__main__':
