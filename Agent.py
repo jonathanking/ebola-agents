@@ -26,11 +26,11 @@ NEW_CASES = 1
 # Agent Params
 CONSTRAIN_MOVEMENT = True
 CONSTRAIN_NETWORK = False
-EXCLUDE_EDGES = dict()     # (x,y) -> [(x0,y0), (x1,y1)...]
+EXCLUDE_EDGES = dict()     # (x,y) -> [(x0,y0), (x1,y1)...]; Neighbors to ignore
 PROB_STAY = 0.9
 PROB_LEAVE = 1 - PROB_STAY
-INF_TIME = 8.0             # From CDC avg time til death
-R_VALUE = 2.0              # From CDC
+INF_TIME = 8.0             # From CDC avg time til death/removal
+R_VALUE = 2.0              # From CDC avg # of people infected by individual
 R0 = R_VALUE / INF_TIME    # Probability of infecting someone per timestep
 
 
@@ -65,8 +65,7 @@ class Agent(object):
             probability_dist = [PROB_STAY]
             for i in range(num_neighbors):
                 probability_dist.append(PROB_LEAVE / num_neighbors)
-            idx = np.random.choice(
-                range(len(self.neighbors)), p=probability_dist)
+            idx = np.random.choice(range(len(self.neighbors)), p=probability_dist)
             self.pos = self.neighbors[idx]
         else:
             idx = np.random.choice(range(len(self.neighbors)))
