@@ -15,10 +15,8 @@ NODE_STATS = {}           # (x,y) -> {"numI": # infected, "nonR": # non_removed}
 
 # Global Model Params
 OUT_DIR = "results/"
-# sqrt(square area of city) / sqrt(scaling_factor)
-GRAPH_SIZE = int(np.sqrt(174 - 1)/np.sqrt(REDUCTION_FACTOR)) * 2
-# population / scaling factor
-NUM_AGENTS = int((1.6 * 10**6)/(REDUCTION_FACTOR))
+GRAPH_SIZE = int(np.sqrt(174 - 1)/np.sqrt(REDUCTION_FACTOR)) * 2 # sqrt(square area of city) / sqrt(scaling_factor)
+NUM_AGENTS = int((1.6 * 10**6)/(REDUCTION_FACTOR)) # population / scaling factor
 NUM_NODES = (GRAPH_SIZE + 1)**2
 CUR_TIME = 0
 NUM_INF = 1
@@ -28,7 +26,7 @@ NEW_CASES = 1
 # Agent Params
 CONSTRAIN_MOVEMENT = True
 CONSTRAIN_NETWORK = False
-EXCLUDE_EDGES = dict() # (x,y) -> [(x0,y0), (x1,y1)...]
+EXCLUDE_EDGES = dict()     # (x,y) -> [(x0,y0), (x1,y1)...]
 PROB_STAY = 0.9
 PROB_LEAVE = 1 - PROB_STAY
 INF_TIME = 8.0             # From CDC avg time til death
@@ -159,11 +157,13 @@ def init_agents():
 def main():
     global CUR_TIME
     global NEW_CASES
-
     start_time = time.strftime("%Y%m%d_%H%M%S")
+
     print "Graph size:", GRAPH_SIZE, " Nodes:", NUM_NODES
     print "Num agents:", NUM_AGENTS
+
     agents = init_agents()
+
     print "Agents initialized..."
 
     infected_only = []
