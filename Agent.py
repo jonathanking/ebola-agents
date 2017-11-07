@@ -25,7 +25,7 @@ NEW_CASES = 1
 
 # Agent Params
 CONSTRAIN_MOVEMENT = False
-CONSTRAIN_NETWORK = False
+CONSTRAIN_NETWORK = True
 if not CONSTRAIN_NETWORK:
     EXCLUDE_EDGES = dict()
 elif CONSTRAIN_NETWORK:
@@ -59,6 +59,9 @@ PROB_LEAVE = 1 - PROB_STAY
 INF_TIME = 8.0             # From CDC avg time til death/removal
 R_VALUE = 2.0              # From CDC avg # of people infected by individual
 R0 = R_VALUE / INF_TIME    # Probability of infecting someone per timestep
+
+print "Constrain movement:", CONSTRAIN_MOVEMENT
+print "Constrain network:", CONSTRAIN_NETWORK
 
 
 class Agent(object):
