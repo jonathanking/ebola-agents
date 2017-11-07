@@ -16,7 +16,7 @@ NODE_STATS = {}           # (x,y) -> {"numI": # infected, "nonR": # non_removed}
 # Global Model Params
 OUT_DIR = "results/"
 GRAPH_SIZE = int(np.sqrt(174 - 1)/np.sqrt(REDUCTION_FACTOR)) # sqrt(square area of city) / sqrt(scaling_factor)
-NUM_AGENTS = 1200#int((1.6 * 10**6)/(REDUCTION_FACTOR)) # population / scaling factor
+NUM_AGENTS = int((1.6 * 10**6)/(REDUCTION_FACTOR)) # population / scaling factor
 NUM_NODES = (GRAPH_SIZE + 1)**2
 CUR_TIME = 0
 NUM_INF = 1
