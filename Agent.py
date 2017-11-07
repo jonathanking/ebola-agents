@@ -15,8 +15,8 @@ NODE_STATS = {}           # (x,y) -> {"numI": # infected, "nonR": # non_removed}
 
 # Global Model Params
 OUT_DIR = "results/"
-GRAPH_SIZE = int(np.sqrt(174 - 1)/np.sqrt(REDUCTION_FACTOR)) * 2 # sqrt(square area of city) / sqrt(scaling_factor)
-NUM_AGENTS = int((1.6 * 10**6)/(REDUCTION_FACTOR)) # population / scaling factor
+GRAPH_SIZE = int(np.sqrt(174 - 1)/np.sqrt(REDUCTION_FACTOR)) # sqrt(square area of city) / sqrt(scaling_factor)
+NUM_AGENTS = 600#int((1.6 * 10**6)/(REDUCTION_FACTOR)) # population / scaling factor
 NUM_NODES = (GRAPH_SIZE + 1)**2
 CUR_TIME = 0
 NUM_INF = 1
@@ -24,9 +24,32 @@ NUM_R = 0
 NEW_CASES = 1
 
 # Agent Params
-CONSTRAIN_MOVEMENT = True
+CONSTRAIN_MOVEMENT = False
 CONSTRAIN_NETWORK = False
-EXCLUDE_EDGES = dict()     # (x,y) -> [(x0,y0), (x1,y1)...]; Neighbors to ignore
+if not CONSTRAIN_NETWORK:
+    EXCLUDE_EDGES = dict()
+elif CONSTRAIN_NETWORK:
+    # (x,y) -> [(x0,y0), (x1,y1)...]; Neighbors to ignore
+    EXCLUDE_EDGES = {(1,6):(1,7),   \
+                     (2,6):(2,7),   \
+                     (3,6):(3,7),   \
+                     (4,6):(4,7),   \
+                     (5,6):(5,7),   \
+                     (6,1):(7,1),   \
+                     (6,2):(7,2),   \
+                     (6,3):(7,3),   \
+                     (6,4):(7,4),   \
+                     (6,5):(7,5),   \
+                     (6,8):(7,8),   \
+                     (6,9):(7,9),   \
+                     (6,10):(7,10), \
+                     (6,11):(7,11), \
+                     (6,12):(7,12), \
+                     (8,6):(8,7),   \
+                     (9,6):(9,7),   \
+                     (10,6):(10,7), \
+                     (11,6):(11,7), \
+                     (12,6):(12,7)}
 PROB_STAY = 0.9
 PROB_LEAVE = 1 - PROB_STAY
 INF_TIME = 8.0             # From CDC avg time til death/removal
