@@ -27,6 +27,11 @@ NEW_CASES = 1
 # Agent Params
 CONSTRAIN_MOVEMENT = True
 CONSTRAIN_NETWORK = True
+PROB_STAY = 0.9
+PROB_LEAVE = 1 - PROB_STAY
+INF_TIME = 8.0  # From CDC avg time til death/removal
+R_VALUE = 2.0  # From CDC avg # of people infected by individual
+R0 = R_VALUE / INF_TIME  # Probability of infecting someone per timestep
 
 if not CONSTRAIN_NETWORK:
     EXCLUDE_EDGES = dict()
@@ -57,14 +62,6 @@ elif CONSTRAIN_NETWORK:
                      (12, 6): (12, 7),
                      (13, 6): (13, 7)}
 EXCLUDE_EDGES_KEYS = set(EXCLUDE_EDGES.keys())
-PROB_STAY = 0.9
-PROB_LEAVE = 1 - PROB_STAY
-INF_TIME = 8.0  # From CDC avg time til death/removal
-R_VALUE = 2.0  # From CDC avg # of people infected by individual
-R0 = R_VALUE / INF_TIME  # Probability of infecting someone per timestep
-
-print "Constrain movement:", CONSTRAIN_MOVEMENT
-print "Constrain network:", CONSTRAIN_NETWORK
 
 
 class Agent(object):
@@ -190,6 +187,8 @@ def main():
     global CUR_TIME
     global NEW_CASES
 
+    print "Constrain movement:", CONSTRAIN_MOVEMENT
+    print "Constrain network:", CONSTRAIN_NETWORK
     print "Graph size:", GRAPH_SIZE, " Nodes:", NUM_NODES
     print "Num agents:", NUM_AGENTS
 
