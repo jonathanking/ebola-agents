@@ -2,18 +2,24 @@ import numpy as np
 import matplotlib.pyplot as plt
 import sys
 import time
+import os
 
 
-if len(sys.argv) == 5:
-    FILENAME_SUFFIX = ""
-elif len(sys.argv) == 6:
-    FILENAME_SUFFIX = sys.argv[5]
-else:
-    print "Please provide a maximum time to run simulation and a size reduction factor."
+if len(sys.argv) != 9:
+    print "ARGS: timesteps prob_stay time_til_death r_value"
     exit(0)
 
-
-MAX_TIME, REDUCTION_FACTOR = int(sys.argv[1]), int(sys.argv[2])
+# User controlled parameters
+MAX_TIME = int(sys.argv[1])
+PROB_STAY = float(sys.argv[2])#0.9
+INF_TIME =  int(sys.argv[3])#8.0  # From CDC avg time til death/removal
+R_VALUE =  float(sys.argv[4])#2.0  # From CDC avg # of people infected by individual
+INC_LIMIT = int(sys.argv[5]) # time before becoming infected, upper limit
+CONSTRAIN_MOVEMENT = (sys.argv[6] == True)#False
+CONSTRAIN_NETWORK = (sys.argv[7] == True)#False
+OUT_DIR = sys.argv[8]
+if not os.path.isdir(OUT_DIR):
+    os.mkdir(OUT_DIR)
 
 # Data Lookup Structures
 NEIGHBOR_LIST = {}  # (x,y) -> neighbors of (x,y)
@@ -21,22 +27,18 @@ NEIGHBOR_LIST_KEYS = set()
 NODE_STATS = {}  # (x,y) -> {"numI": # infected, "nonR": # non_removed}
 
 # Global Model Params
-OUT_DIR = "results/"
-GRAPH_SIZE = int(np.sqrt(174 - 1) / np.sqrt(REDUCTION_FACTOR))  # sqrt(square area of city) / sqrt(scaling_factor)
-NUM_AGENTS = int((1.6 * 10 ** 6) / (REDUCTION_FACTOR ))  # population / scaling factor
+GRAPH_SIZE = int(np.sqrt(174 - 1))  # sqrt(square area of city) / sqrt(scaling_factor)
+NUM_AGENTS = int((1.6 * 10 ** 6))  # population / scaling factor
 NUM_NODES = (GRAPH_SIZE + 1) ** 2
 CUR_TIME = 0
 NUM_INF = 1
 NUM_R = 0
 NEW_CASES = 1
 
-# Agent Params
-CONSTRAIN_MOVEMENT = (sys.argv[3] == True)#False
-CONSTRAIN_NETWORK = (sys.argv[4] == True)#False
-PROB_STAY = 0.9
+
+
 PROB_LEAVE = 1 - PROB_STAY
-INF_TIME = 8.0  # From CDC avg time til death/removal
-R_VALUE = 2.0  # From CDC avg # of people infected by individual
+
 R0 = R_VALUE / INF_TIME  # Probability of infecting someone per timestep
 
 if not CONSTRAIN_NETWORK:
@@ -78,7 +80,7 @@ class Agent(object):
         self.state = state
         self.exposed_time = None
         self.infected_time = None
-        self.INC_TIME = np.random.randint(2, 21 + 1)  # From WHO incubation time
+        self.INC_TIME = np.random.randint(2, INC_LIMIT)#np.random.randint(2, 21 + 1)  # From WHO incubation time
         self.neighbors = self.find_neighbors()
 
         # Update stats
@@ -183,6 +185,7 @@ def init_agents():
             for a in xrange(agents_per_node):
                 state = "S"
                 if x == 0 and y == 0 and a == 0:
+                # if a == 0 or a == 1:              # Adds 2 infected per node
                     state = "I"
                 agents.append(Agent((x, y), state))
 
@@ -221,8 +224,8 @@ def main():
         infected_only.append(NUM_INF)
         removed_only.append(NUM_R)
 
-    np.save(get_filename(start_time, "data/INFECTED_") + ".npy", infected)
-    np.save(get_filename(start_time, "data/INFCONLY_") + ".npy", infected_only)
+    np.save(get_filename(start_time, "INFECTED_") + ".npy", infected)
+    np.save(get_filename(start_time, "INFCONLY_") + ".npy", infected_only)
     plt.plot(xrange(MAX_TIME), infected, color='b', label='Infected + Removed')
     plt.plot(xrange(MAX_TIME), infected_only, color='r', label='Infected')
     plt.title("CONSTRAIN_MOVEMENT = " + str(CONSTRAIN_MOVEMENT))
@@ -239,7 +242,7 @@ def main():
     plt.xlabel('Week #')
     plt.legend(loc="upper left")
     plt.savefig(get_filename(start_time, "NEWCASE_") + ".svg")
-    np.save(get_filename(start_time, "data/NEWCASE_") + ".npy", new_cases)
+    np.save(get_filename(start_time, "NEWCASE_") + ".npy", new_cases)
     # plt.show()
 
 
@@ -257,9 +260,9 @@ def get_filename(timestr, prefix=""):
         const_net = "True_"
     else:
         const_net = "False"
-    return OUT_DIR + "/" + prefix + "size{0:03d}_agents{1}_cm{2}_cn{3}_days{4}_t{5}_{6}".format(GRAPH_SIZE, NUM_AGENTS,
+    return OUT_DIR + "/" + prefix + "size{0:03d}_agents{1}_cm{2}_cn{3}_days{4}_t{5}".format(GRAPH_SIZE, NUM_AGENTS,
                                                                                             const_mov, const_net,
-                                                                                            MAX_TIME, timestr, FILENAME_SUFFIX)
+                                                                                            MAX_TIME, timestr)
 
 
 if __name__ == '__main__':
