@@ -3,11 +3,17 @@ import matplotlib.pyplot as plt
 import sys
 import time
 
-if len(sys.argv) < 3:
+
+if len(sys.argv) == 3:
+    FILENAME_SUFFIX = ""
+elif len(sys.argv) == 4:
+    FILENAME_SUFFIX = sys.argv[3]
+else:
     print "Please provide a maximum time to run simulation and a size reduction factor."
     exit(0)
 
-MAX_TIME, REDUCTION_FACTOR = int(sys.argv[1]), int(sys.argv[2])
+
+MAX_TIME, REDUCTION_FACTOR, FILENAME_SUFFIX = int(sys.argv[1]), int(sys.argv[2]), sys.argv[3]
 
 # Data Lookup Structures
 NEIGHBOR_LIST = {}  # (x,y) -> neighbors of (x,y)
@@ -17,7 +23,7 @@ NODE_STATS = {}  # (x,y) -> {"numI": # infected, "nonR": # non_removed}
 # Global Model Params
 OUT_DIR = "results/"
 GRAPH_SIZE = int(np.sqrt(174 - 1) / np.sqrt(REDUCTION_FACTOR))  # sqrt(square area of city) / sqrt(scaling_factor)
-NUM_AGENTS = int((1.6 * 10 ** 6) / (REDUCTION_FACTOR))  # population / scaling factor
+NUM_AGENTS = int((1.6 * 10 ** 6) / (REDUCTION_FACTOR ))  # population / scaling factor
 NUM_NODES = (GRAPH_SIZE + 1) ** 2
 CUR_TIME = 0
 NUM_INF = 1
@@ -25,8 +31,8 @@ NUM_R = 0
 NEW_CASES = 1
 
 # Agent Params
-CONSTRAIN_MOVEMENT = True
-CONSTRAIN_NETWORK = True
+CONSTRAIN_MOVEMENT = False
+CONSTRAIN_NETWORK = False
 PROB_STAY = 0.9
 PROB_LEAVE = 1 - PROB_STAY
 INF_TIME = 8.0  # From CDC avg time til death/removal
@@ -251,9 +257,9 @@ def get_filename(timestr, prefix=""):
         const_net = "True_"
     else:
         const_net = "False"
-    return OUT_DIR + "/" + prefix + "size{0:03d}_agents{1}_cm{2}_cn{3}_days{4}_t{5}".format(GRAPH_SIZE, NUM_AGENTS,
+    return OUT_DIR + "/" + prefix + "size{0:03d}_agents{1}_cm{2}_cn{3}_days{4}_t{5}_{6}".format(GRAPH_SIZE, NUM_AGENTS,
                                                                                             const_mov, const_net,
-                                                                                            MAX_TIME, timestr)
+                                                                                            MAX_TIME, timestr, FILENAME_SUFFIX)
 
 
 if __name__ == '__main__':
