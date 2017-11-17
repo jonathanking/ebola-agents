@@ -4,10 +4,10 @@ import sys
 import time
 
 
-if len(sys.argv) == 3:
+if len(sys.argv) == 5:
     FILENAME_SUFFIX = ""
-elif len(sys.argv) == 4:
-    FILENAME_SUFFIX = sys.argv[3]
+elif len(sys.argv) == 6:
+    FILENAME_SUFFIX = sys.argv[5]
 else:
     print "Please provide a maximum time to run simulation and a size reduction factor."
     exit(0)
@@ -31,8 +31,8 @@ NUM_R = 0
 NEW_CASES = 1
 
 # Agent Params
-CONSTRAIN_MOVEMENT = False
-CONSTRAIN_NETWORK = False
+CONSTRAIN_MOVEMENT = (sys.argv[3] == True)#False
+CONSTRAIN_NETWORK = (sys.argv[4] == True)#False
 PROB_STAY = 0.9
 PROB_LEAVE = 1 - PROB_STAY
 INF_TIME = 8.0  # From CDC avg time til death/removal
