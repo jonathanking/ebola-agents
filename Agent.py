@@ -13,7 +13,7 @@ else:
     exit(0)
 
 
-MAX_TIME, REDUCTION_FACTOR, FILENAME_SUFFIX = int(sys.argv[1]), int(sys.argv[2])
+MAX_TIME, REDUCTION_FACTOR = int(sys.argv[1]), int(sys.argv[2])
 
 # Data Lookup Structures
 NEIGHBOR_LIST = {}  # (x,y) -> neighbors of (x,y)
