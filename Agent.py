@@ -4,6 +4,7 @@ import sys
 import time
 import os
 
+np.random.seed(7)
 
 if len(sys.argv) != 9:
     print "ARGS: timesteps prob_stay time_til_death r_value"
@@ -15,11 +16,14 @@ PROB_STAY = float(sys.argv[2])#0.9
 INF_TIME =  int(sys.argv[3])#8.0  # From CDC avg time til death/removal
 R_VALUE =  float(sys.argv[4])#2.0  # From CDC avg # of people infected by individual
 INC_LIMIT = int(sys.argv[5]) # time before becoming infected, upper limit
-CONSTRAIN_MOVEMENT = (sys.argv[6] == True)#False
-CONSTRAIN_NETWORK = (sys.argv[7] == True)#False
+CONSTRAIN_MOVEMENT = (sys.argv[6] == "True")#False
+CONSTRAIN_NETWORK = (sys.argv[7] == "True")#False
 OUT_DIR = sys.argv[8]
-if not os.path.isdir(OUT_DIR):
-    os.mkdir(OUT_DIR)
+try:
+    if not os.path.isdir(OUT_DIR):
+        os.mkdir(OUT_DIR)
+except:
+    pass
 
 # Data Lookup Structures
 NEIGHBOR_LIST = {}  # (x,y) -> neighbors of (x,y)
@@ -213,9 +217,8 @@ def main():
 
     for t in xrange(MAX_TIME):
         CUR_TIME = t
-        if t % 7 == 0:
-            new_cases.append(NEW_CASES)
-            NEW_CASES = 0
+        new_cases.append(NEW_CASES)
+        NEW_CASES = 0
         for a in agents:
             a.update_state()
             a.update_pos()
@@ -228,20 +231,20 @@ def main():
     np.save(get_filename(start_time, "INFCONLY_") + ".npy", infected_only)
     plt.plot(xrange(MAX_TIME), infected, color='b', label='Infected + Removed')
     plt.plot(xrange(MAX_TIME), infected_only, color='r', label='Infected')
-    plt.title("CONSTRAIN_MOVEMENT = " + str(CONSTRAIN_MOVEMENT))
     plt.ylabel('Number of cases')
-    plt.xlabel('Day #')
+    plt.xlabel('Timestep #')
     plt.legend(loc="upper left")
     plt.savefig(get_filename(start_time, "INFECTED_") + ".svg")
+    plt.savefig(get_filename(start_time, "INFECTED_") + ".png")
     # plt.show()
     plt.close()
 
     plt.plot(xrange(len(new_cases)), new_cases, label='New cases')
-    plt.title("New cases, CONSTRAIN_MOVEMENT =" + str(CONSTRAIN_MOVEMENT))
     plt.ylabel('Number of cases')
-    plt.xlabel('Week #')
+    plt.xlabel('Timestep #')
     plt.legend(loc="upper left")
     plt.savefig(get_filename(start_time, "NEWCASE_") + ".svg")
+    plt.savefig(get_filename(start_time, "NEWCASE_") + ".png")
     np.save(get_filename(start_time, "NEWCASE_") + ".npy", new_cases)
     # plt.show()
 
