@@ -7,7 +7,7 @@ import os
 np.random.seed(7)
 
 if len(sys.argv) != 9:
-    print "ARGS: timesteps prob_stay time_til_death r_value"
+    print "Wrong number of arguments.\nMAX_TIME, PROB_STAY, INF_TIME, R_VALUE, INC_LIMIT, CONSTRAIN_MOVEMENT, CONSTRAIN_NETWORK, OUT_DIR"
     exit(0)
 
 # User controlled parameters
