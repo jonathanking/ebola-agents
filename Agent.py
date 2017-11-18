@@ -52,7 +52,7 @@ NEW_CASES = 1
 
 PROB_LEAVE = 1 - PROB_STAY
 
-R0 = (R_VALUE / INF_TIME) / 100.0  # Probability of infecting someone per timestep
+R0 = (R_VALUE / INF_TIME)  # Probability of infecting someone per timestep
 
 if not CONSTRAIN_NETWORK:
     EXCLUDE_EDGES = dict()
