@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import sys
 import time
 import os
+import cPickle as pickle
 
 np.random.seed(7)
 
@@ -28,7 +29,15 @@ except:
 # Data Lookup Structures
 NEIGHBOR_LIST = {}  # (x,y) -> neighbors of (x,y)
 NEIGHBOR_LIST_KEYS = set()
-NODE_STATS = {}  # (x,y) -> {"numI": # infected, "nonR": # non_removed}
+NODE_STATS = {}  # (x,y) -> {"numI": # infected, "nonR": # non_removed,
+                            #"S": [...],
+                            #"E": [...],
+                            # "I": [...],
+                            # "R": [...]}
+                            #"Svec": [...],
+                            #"Evec": [...],
+                            # "Ivec": [...],
+                            # "Rvec": [...]}
 
 # Global Model Params
 GRAPH_SIZE = int(np.sqrt(174 - 1))  # sqrt(square area of city) / sqrt(scaling_factor)
@@ -43,7 +52,7 @@ NEW_CASES = 1
 
 PROB_LEAVE = 1 - PROB_STAY
 
-R0 = R_VALUE / INF_TIME  # Probability of infecting someone per timestep
+R0 = (R_VALUE / INF_TIME) / 100.0  # Probability of infecting someone per timestep
 
 if not CONSTRAIN_NETWORK:
     EXCLUDE_EDGES = dict()
@@ -86,7 +95,8 @@ class Agent(object):
         self.infected_time = None
         self.INC_TIME = np.random.randint(2, INC_LIMIT)#np.random.randint(2, 21 + 1)  # From WHO incubation time
         self.neighbors = self.find_neighbors()
-
+        
+       
         # Update stats
         if state == "I":
             NODE_STATS[self.pos]["numI"] += 1
@@ -94,10 +104,22 @@ class Agent(object):
         if state != "R":
             NODE_STATS[self.pos]["nonR"] += 1
 
+        if self.state is "S":
+            NODE_STATS[self.pos]["S"] += 1
+        if self.state is "I":
+            NODE_STATS[self.pos]["I"] += 1
+
     def update_pos(self):
         # Remove self from stats
         if self.state == "I":
             NODE_STATS[self.pos]["numI"] -= 1
+            NODE_STATS[self.pos]["I"] -= 1
+        if self.state == "S":
+            NODE_STATS[self.pos]["S"] -= 1
+        if self.state == "R":
+            NODE_STATS[self.pos]["R"] -= 1
+        if self.state == "E":
+            NODE_STATS[self.pos]["E"] -= 1
         if self.state != "R":
             NODE_STATS[self.pos]["nonR"] -= 1
 
@@ -115,8 +137,15 @@ class Agent(object):
         # Add self to stats
         if self.state == "I":
             NODE_STATS[self.pos]["numI"] += 1
+            NODE_STATS[self.pos]["I"] += 1
         if self.state != "R":
             NODE_STATS[self.pos]["nonR"] += 1
+        if self.state == "S":
+            NODE_STATS[self.pos]["S"] += 1
+        if self.state == "R":
+            NODE_STATS[self.pos]["R"] += 1
+        if self.state == "E":
+            NODE_STATS[self.pos]["E"] += 1
 
         # New neighbors
         self.neighbors = self.find_neighbors()
@@ -181,7 +210,7 @@ def init_agents():
         for y in xrange(GRAPH_SIZE + 1):
 
             if (x, y) not in NODE_STATS.keys():
-                NODE_STATS[(x, y)] = {"numI": 0.0, "nonR": 0.0}
+                NODE_STATS[(x, y)] = {"numI": 0.0, "nonR": 0.0, "S": 0, "I":0, "E":0, "R":0, "Svec":np.zeros(MAX_TIME+1), "Ivec":np.zeros(MAX_TIME+1), "Evec":np.zeros(MAX_TIME+1), "Rvec":np.zeros(MAX_TIME+1) }
             if left_over_agents > 0:
                 agents.append(Agent((x, y), "S"))
                 left_over_agents -= 1
@@ -195,6 +224,16 @@ def init_agents():
 
     return agents
 
+
+def update_nodestats():
+    global NODE_STATS
+    global CUR_TIME
+
+    for pos, subdict in NODE_STATS.iteritems(): # pos = (x, y), subdict = { stats...}
+        NODE_STATS[pos]["Rvec"][CUR_TIME] = NODE_STATS[pos]["R"]
+        NODE_STATS[pos]["Svec"][CUR_TIME] = NODE_STATS[pos]["S"]
+        NODE_STATS[pos]["Evec"][CUR_TIME] = NODE_STATS[pos]["E"]
+        NODE_STATS[pos]["Ivec"][CUR_TIME] = NODE_STATS[pos]["I"]
 
 def main():
     global CUR_TIME
@@ -215,10 +254,12 @@ def main():
     infected = []
     new_cases = []
 
+
     for t in xrange(MAX_TIME):
         CUR_TIME = t
         new_cases.append(NEW_CASES)
         NEW_CASES = 0
+        update_nodestats()
         for a in agents:
             a.update_state()
             a.update_pos()
@@ -226,6 +267,14 @@ def main():
         infected.append(NUM_INF + NUM_R)
         infected_only.append(NUM_INF)
         removed_only.append(NUM_R)
+    
+    CUR_TIME += 1 # accounts for saving final state of system
+    update_nodestats()
+
+
+    NODE_STATS_FILE = open(get_filename(start_time, "NODE_STATS") + ".pkl", "w")
+    pickle.dump(NODE_STATS, NODE_STATS_FILE, 2)
+    NODE_STATS_FILE.close()
 
     np.save(get_filename(start_time, "INFECTED_") + ".npy", infected)
     np.save(get_filename(start_time, "INFCONLY_") + ".npy", infected_only)
