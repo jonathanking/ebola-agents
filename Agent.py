@@ -47,6 +47,7 @@ CUR_TIME = 0
 NUM_INF = 1
 NUM_R = 0
 NEW_CASES = 1
+# PROB_MOVE = .25
 
 
 
@@ -58,30 +59,54 @@ if not CONSTRAIN_NETWORK:
     EXCLUDE_EDGES = dict()
 elif CONSTRAIN_NETWORK:
     # (x,y) -> [Neighbors to ignore]
-    EXCLUDE_EDGES = {(0, 6): (0, 7),
-                     (1, 6): (1, 7),
-                     (2, 6): (2, 7),
-                     (3, 6): (3, 7),
-                     (4, 6): (4, 7),
-                     (5, 6): (5, 7),
-                     (6, 0): (7, 0),
-                     (6, 1): (7, 1),
-                     (6, 2): (7, 2),
-                     (6, 3): (7, 3),
-                     (6, 4): (7, 4),
-                     (6, 5): (7, 5),
-                     (6, 8): (7, 8),
-                     (6, 9): (7, 9),
-                     (6, 10): (7, 10),
-                     (6, 11): (7, 11),
-                     (6, 12): (7, 12),
-                     (6, 13): (7, 13),
-                     (8, 6): (8, 7),
-                     (9, 6): (9, 7),
-                     (10, 6): (10, 7),
-                     (11, 6): (11, 7),
-                     (12, 6): (12, 7),
-                     (13, 6): (13, 7)}
+    EXCLUDE_EDGES = {   (0, 6): (0, 7),
+                        (0, 7): (0, 6),
+                        (1, 6): (1, 7),
+                        (1, 7): (1, 6),
+                        (2, 6): (2, 7),
+                        (2, 7): (2, 6),
+                        (3, 6): (3, 7),
+                        (3, 7): (3, 6),
+                        (4, 6): (4, 7),
+                        (4, 7): (4, 6),
+                        (5, 6): (5, 7),
+                        (5, 7): (5, 6),
+                        (6, 0): (7, 0),
+                        (7, 0): (6, 0),
+                        (6, 1): (7, 1),
+                        (7, 1): (6, 1),
+                        (6, 2): (7, 2),
+                        (7, 2): (6, 2),
+                        (6, 3): (7, 3),
+                        (7, 3): (6, 3),
+                        (6, 4): (7, 4),
+                        (7, 4): (6, 4),
+                        (6, 5): (7, 5),
+                        (7, 5): (6, 5),
+                        (6, 8): (7, 8),
+                        (7, 8): (6, 8),
+                        (6, 9): (7, 9),
+                        (7, 9): (6, 9),
+                        (6, 10): (7, 10),
+                        (7, 10): (6, 10),
+                        (6, 11): (7, 11),
+                        (7, 11): (6, 11),
+                        (6, 12): (7, 12),
+                        (7, 12): (6, 12),
+                        (6, 13): (7, 13),
+                        (7, 13): (6, 13),
+                        (8, 6): (8, 7),
+                        (8, 7): (8, 6),
+                        (9, 6): (9, 7),
+                        (9, 7): (9, 6),
+                        (10, 6): (10, 7),
+                        (10, 7): (10, 6),
+                        (11, 6): (11, 7),
+                        (11, 7): (11, 6),
+                        (12, 6): (12, 7),
+                        (12, 7): (12, 6),
+                        (13, 6): (13, 7),
+                        (13, 7): (13, 6)}
 EXCLUDE_EDGES_KEYS = set(EXCLUDE_EDGES.keys())
 
 
@@ -110,6 +135,10 @@ class Agent(object):
             NODE_STATS[self.pos]["I"] += 1
 
     def update_pos(self):
+        # Move with low probability
+        # if np.random.rand() < PROB_MOVE:
+        #     return
+
         # Remove self from stats
         if self.state == "I":
             NODE_STATS[self.pos]["numI"] -= 1
@@ -154,22 +183,31 @@ class Agent(object):
         global NUM_INF
         global NUM_R
         global NEW_CASES
+        global NODE_STATS
+
         if self.state == "S":
             z = np.random.random()
             if z < (NODE_STATS[self.pos]["numI"] / NODE_STATS[self.pos]["nonR"]) * R0:
                 self.state = "E"
                 self.exposed_time = CUR_TIME
+                NODE_STATS[self.pos]["S"] -= 1
+                NODE_STATS[self.pos]["E"] += 1
+
         elif self.state == "E":
             if (CUR_TIME - self.exposed_time) >= self.INC_TIME:
                 self.state = "I"
                 self.infected_time = CUR_TIME
                 NUM_INF += 1
+                NODE_STATS[self.pos]["E"] -= 1
+                NODE_STATS[self.pos]["I"] += 1
         elif self.state == "I":
             if (CUR_TIME - self.infected_time) >= INF_TIME:
                 self.state = "R"
                 NUM_R += 1
                 NUM_INF -= 1
                 NEW_CASES += 1
+                NODE_STATS[self.pos]["I"] -= 1
+                NODE_STATS[self.pos]["R"] += 1
 
     def find_neighbors(self):
         global NEIGHBOR_LIST
