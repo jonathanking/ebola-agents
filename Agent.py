@@ -225,7 +225,7 @@ class Agent(object):
                         xy = (self.pos[0], self.pos[1] + d)
                     x1, y1 = xy
                     # True if this neighbor should be excluded
-                    exclude_neighbor = (self.pos in EXCLUDE_EDGES_KEYS) and ((x1, y1) in EXCLUDE_EDGES[self.pos])
+                    exclude_neighbor = (self.pos in EXCLUDE_EDGES_KEYS) and ((x1, y1) == EXCLUDE_EDGES[self.pos])
                     if not (exclude_neighbor or x1 < 0 or y1 < 0 or x1 > GRAPH_SIZE or y1 > GRAPH_SIZE):
                         n.append((x1, y1))
             NEIGHBOR_LIST[self.pos] = n
