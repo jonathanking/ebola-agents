@@ -13,12 +13,12 @@ if len(sys.argv) != 9:
 
 # User controlled parameters
 MAX_TIME = int(sys.argv[1])
-PROB_STAY = float(sys.argv[2])#0.9
-INF_TIME =  int(sys.argv[3])#8.0  # From CDC avg time til death/removal
-R_VALUE =  float(sys.argv[4])#2.0  # From CDC avg # of people infected by individual
-INC_LIMIT = int(sys.argv[5]) # time before becoming infected, upper limit
-CONSTRAIN_MOVEMENT = (sys.argv[6] == "True")#False
-CONSTRAIN_NETWORK = (sys.argv[7] == "True")#False
+PROB_STAY = float(sys.argv[2]) # Default = 0.9
+INF_TIME =  int(sys.argv[3])   # Default = 8.0, from CDC avg time til death/removal
+R_VALUE =  float(sys.argv[4])  # Default = 2.0, from CDC avg # of people infected by individual
+INC_LIMIT = int(sys.argv[5])   # Default = 22 , from CDC time before becoming infected, upper limit
+CONSTRAIN_MOVEMENT = (sys.argv[6] == "True")
+CONSTRAIN_NETWORK = (sys.argv[7] == "True")
 OUT_DIR = sys.argv[8]
 try:
     if not os.path.isdir(OUT_DIR):
@@ -29,37 +29,32 @@ except:
 # Data Lookup Structures
 NEIGHBOR_LIST = {}  # (x,y) -> neighbors of (x,y)
 NEIGHBOR_LIST_KEYS = set()
-NODE_STATS = {}  # (x,y) -> {"numI": # infected, "nonR": # non_removed,
-                            #"S": [...],
-                            #"E": [...],
-                            # "I": [...],
-                            # "R": [...]}
-                            #"Svec": [...],
-                            #"Evec": [...],
-                            # "Ivec": [...],
-                            # "Rvec": [...]}
+NODE_STATS = {}     # (x,y) -> {  "numI": num infected, 
+                                # "nonR": num non_removed,
+                                # "S": [...],
+                                # "E": [...],
+                                # "I": [...],
+                                # "R": [...]}
+                                # "Svec": [...],
+                                # "Evec": [...],
+                                # "Ivec": [...],
+                                # "Rvec": [...] }
 
 # Global Model Params
 GRAPH_SIZE = int(np.sqrt(174 - 1))  # sqrt(square area of city) / sqrt(scaling_factor)
-NUM_AGENTS = int((1.6 * 10 ** 6))  # population / scaling factor
+NUM_AGENTS = int((1.6 * 10 ** 6))   # population / scaling factor
 NUM_NODES = (GRAPH_SIZE + 1) ** 2
 CUR_TIME = 0
 NUM_INF = 1
 NUM_R = 0
 NEW_CASES = 1
-# PROB_MOVE = .25
-
-
-
 PROB_LEAVE = 1 - PROB_STAY
-
-R0 = (R_VALUE / INF_TIME)  # Probability of infecting someone per timestep
+R0 = (R_VALUE / INF_TIME)           # Probability of infecting someone per timestep
 
 if not CONSTRAIN_NETWORK:
     EXCLUDE_EDGES = dict()
 elif CONSTRAIN_NETWORK:
-    # (x,y) -> [Neighbors to ignore]
-    EXCLUDE_EDGES = {   (0, 6): (0, 7),
+    EXCLUDE_EDGES = {   (0, 6): (0, 7),     # (x,y) -> [Neighbor to ignore]
                         (0, 7): (0, 6),
                         (1, 6): (1, 7),
                         (1, 7): (1, 6),
@@ -118,9 +113,8 @@ class Agent(object):
         self.state = state
         self.exposed_time = None
         self.infected_time = None
-        self.INC_TIME = np.random.randint(2, INC_LIMIT)#np.random.randint(2, 21 + 1)  # From WHO incubation time
+        self.INC_TIME = np.random.randint(2, INC_LIMIT)
         self.neighbors = self.find_neighbors()
-        
        
         # Update stats
         if state == "I":
@@ -135,10 +129,6 @@ class Agent(object):
             NODE_STATS[self.pos]["I"] += 1
 
     def update_pos(self):
-        # Move with low probability
-        # if np.random.rand() < PROB_MOVE:
-        #     return
-
         # Remove self from stats
         if self.state == "I":
             NODE_STATS[self.pos]["numI"] -= 1
@@ -180,6 +170,7 @@ class Agent(object):
         self.neighbors = self.find_neighbors()
 
     def update_state(self):
+        """ Updates the state of an Agent according to set rules. """
         global NUM_INF
         global NUM_R
         global NEW_CASES
@@ -210,13 +201,15 @@ class Agent(object):
                 NODE_STATS[self.pos]["R"] += 1
 
     def find_neighbors(self):
+        """ Returns a list of neighbors for this position on the graph. Attempts
+            to load precomputed neighbors. """
         global NEIGHBOR_LIST
         global NEIGHBOR_LIST_KEYS
         if self.pos in NEIGHBOR_LIST_KEYS:
             return NEIGHBOR_LIST[self.pos]
         else:
             n = [self.pos]
-            # Add +1 and -1 to x and y separately
+            # Adds +1 and -1 to x and y separately
             for d in [-1, 1]:
                 for idx in [0, 1]:
                     if idx == 0:
@@ -256,7 +249,6 @@ def init_agents():
             for a in xrange(agents_per_node):
                 state = "S"
                 if x == 0 and y == 0 and a == 0:
-                # if a == 0 or a == 1:              # Adds 2 infected per node
                     state = "I"
                 agents.append(Agent((x, y), state))
 
@@ -264,6 +256,7 @@ def init_agents():
 
 
 def update_nodestats():
+    """Keeps track of S, E, I, R counts in a vector over time for each node."""
     global NODE_STATS
     global CUR_TIME
 
@@ -274,6 +267,8 @@ def update_nodestats():
         NODE_STATS[pos]["Ivec"][CUR_TIME] = NODE_STATS[pos]["I"]
 
 def main():
+    """ Primary simulation algorithm. Initializes Agents, then updates state and
+        position for a given number of timesteps. """
     global CUR_TIME
     global NEW_CASES
 
@@ -309,7 +304,7 @@ def main():
     CUR_TIME += 1 # accounts for saving final state of system
     update_nodestats()
 
-
+    # Save data and summary figures to disk
     NODE_STATS_FILE = open(get_filename(start_time, "NODE_STATS") + ".pkl", "w")
     pickle.dump(NODE_STATS, NODE_STATS_FILE, 2)
     NODE_STATS_FILE.close()
@@ -323,7 +318,6 @@ def main():
     plt.legend(loc="upper left")
     plt.savefig(get_filename(start_time, "INFECTED_") + ".svg")
     plt.savefig(get_filename(start_time, "INFECTED_") + ".png")
-    # plt.show()
     plt.close()
 
     plt.plot(xrange(len(new_cases)), new_cases, label='New cases')
@@ -333,7 +327,6 @@ def main():
     plt.savefig(get_filename(start_time, "NEWCASE_") + ".svg")
     plt.savefig(get_filename(start_time, "NEWCASE_") + ".png")
     np.save(get_filename(start_time, "NEWCASE_") + ".npy", new_cases)
-    # plt.show()
 
 
 def get_filename(timestr, prefix=""):
